@@ -1,0 +1,39 @@
+{
+  "name": "@scry/sdk",
+  "version": "0.1.0",
+  "description": "Preview TypeScript client for scryd (gRPC)",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "codegen": "bash scripts/codegen.sh",
+    "build": "npm run codegen && tsc -p tsconfig.build.json",
+    "test": "npm run build && vitest run"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.2.3",
+    "@grpc/grpc-js": "^1.12.4",
+    "long": "^5.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "grpc-tools": "^1.13.0",
+    "ts-proto": "^2.7.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

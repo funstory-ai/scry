@@ -1,0 +1,49 @@
+[package]
+name = "scryd"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+bytes.workspace = true
+async-stream.workspace = true
+async-trait.workspace = true
+axum.workspace = true
+base64.workspace = true
+futures-core.workspace = true
+hmac.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml = "0.9"
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-stream.workspace = true
+tonic.workspace = true
+tower.workspace = true
+pin-project.workspace = true
+clap.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tempfile.workspace = true
+uuid.workspace = true
+hex.workspace = true
+blake3.workspace = true
+mime_guess.workspace = true
+http.workspace = true
+http-body-util.workspace = true
+tokio-postgres.workspace = true
+rusqlite.workspace = true
+scry-proto = { path = "../scry-proto" }
+scry-storage = { path = "../scry-storage" }
+scry-index = { path = "../scry-index" }
+utf8parse.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "process", "time", "fs"] }
+tonic.workspace = true
+scry-proto = { path = "../scry-proto" }
+futures-core.workspace = true

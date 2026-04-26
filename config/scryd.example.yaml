@@ -1,0 +1,52 @@
+server:
+  content_root: /tmp/scry/content
+  # Per-workspace SQLite layout: each workspace gets its own
+  # `{index_root}/{workspace_id}/index.db`. This is the only supported layout.
+  index_root: /tmp/scry/index
+
+auth:
+  secret: replace-with-long-random-secret
+  previous_secrets: []
+  allow_local_no_auth: false
+  enforce_scopes: true
+  token_ttl_secs: 3600
+
+transport:
+  grpc_addr: 127.0.0.1:50051
+  # grpc_unix_socket: /run/scry/scryd.sock
+  # tls_cert_path: /etc/scry/tls/server.crt
+  # tls_key_path: /etc/scry/tls/server.key
+  # tls_client_ca_path: /etc/scry/tls/client-ca.crt
+  graceful_shutdown_timeout_secs: 10
+
+events_retention:
+  max_age_secs: 604800
+  min_events_per_workspace: 100000
+  sweep_interval_secs: 60
+
+metrics:
+  log_interval_secs: 15
+  # addr: 127.0.0.1:9090
+
+catalog:
+  # Standalone SQLite catalog (default). Independent of any per-workspace
+  # index file; only stores the `workspace_catalog` table.
+  backend: sqlite
+  # Defaults to {server.index_root}/_catalog.db when omitted.
+  # db_path: /tmp/scry/catalog.db
+  #
+  # Alternative: managed Postgres catalog (recommended for multi-instance
+  # deployments). Set `backend: postgres` and provide postgres_url.
+  # backend: postgres
+  # postgres_url: postgres://postgres:postgres@127.0.0.1:5432/scryd
+
+embedding:
+  provider: mock
+  # base_url: https://api.openai.com
+  # api_key: sk-***
+  # model: text-embedding-3-small
+  # timeout_ms: 15000
+  # document_task: retrieval.passage
+  # query_task: retrieval.query
+  # normalized: true
+  # credits_per_million_tokens: 1.0

@@ -1,0 +1,458 @@
+syntax = "proto3";
+
+package scry.v1;
+
+option go_package = "github.com/nullday/scry/gen/go/scry/v1;scryv1";
+
+service Health {
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+service Admin {
+  rpc CreateWorkspace(CreateWorkspaceRequest) returns (CreateWorkspaceResponse);
+  rpc DeleteWorkspace(DeleteWorkspaceRequest) returns (DeleteWorkspaceResponse);
+  rpc GetWorkspaceStats(GetWorkspaceStatsRequest) returns (GetWorkspaceStatsResponse);
+  rpc ReindexWorkspace(ReindexWorkspaceRequest) returns (ReindexWorkspaceResponse);
+  rpc ListWorkspaces(ListWorkspacesRequest) returns (ListWorkspacesResponse);
+}
+
+service Namespace {
+  rpc Lookup(LookupRequest) returns (LookupResponse);
+  rpc GetAttrs(GetAttrsRequest) returns (GetAttrsResponse);
+  rpc GetAttrsIfChanged(GetAttrsIfChangedRequest) returns (GetAttrsIfChangedResponse);
+  rpc ReadDir(ReadDirRequest) returns (ReadDirResponse);
+  rpc ResolveRef(ResolveRefRequest) returns (ResolveRefResponse);
+  rpc ResolvePath(ResolvePathRequest) returns (ResolvePathResponse);
+}
+
+service Mutation {
+  rpc Create(CreateRequest) returns (CreateResponse);
+  rpc Unlink(UnlinkRequest) returns (UnlinkResponse);
+  rpc Rename(RenameRequest) returns (RenameResponse);
+  rpc SetAttrs(SetAttrsRequest) returns (SetAttrsResponse);
+}
+
+service Files {
+  rpc PutFile(PutFileRequest) returns (PutFileResponse);
+  rpc GetFile(GetFileRequest) returns (stream GetFileChunk);
+}
+
+service Io {
+  rpc Open(OpenRequest) returns (OpenResponse);
+  rpc Read(ReadRequest) returns (ReadResponse);
+  rpc Write(WriteRequest) returns (WriteResponse);
+  rpc Truncate(TruncateRequest) returns (TruncateResponse);
+  rpc Flush(FlushRequest) returns (FlushResponse);
+  rpc Release(ReleaseRequest) returns (ReleaseResponse);
+}
+
+service Search {
+  rpc Search(SearchRequest) returns (SearchResponse);
+}
+
+service Events {
+  rpc Subscribe(SubscribeRequest) returns (stream Event);
+  rpc Acknowledge(AcknowledgeRequest) returns (AcknowledgeResponse);
+}
+
+message PingRequest {}
+
+message PingResponse {
+  string message = 1;
+}
+
+enum NodeKind {
+  NODE_KIND_UNSPECIFIED = 0;
+  NODE_KIND_FILE = 1;
+  NODE_KIND_DIR = 2;
+}
+
+message Attrs {
+  NodeKind kind = 1;
+  uint64 size = 2;
+  int64 mtime_unix_nano = 3;
+  uint32 mode = 4;
+  uint64 version = 5;
+  // Blake3 hex digest; empty for directories or when unknown (legacy rows).
+  string content_hash = 6;
+  string mime = 7;
+}
+
+message NodeRef {
+  string workspace_id = 1;
+  string node_id = 2;
+}
+
+message DirEntry {
+  string name = 1;
+  string node_id = 2;
+  Attrs attrs = 3;
+}
+
+message WorkspaceConfig {
+  string embedding_model = 1;
+  uint32 embedding_dim = 2;
+  uint64 max_file_size = 3;
+}
+
+message CreateWorkspaceRequest {
+  string name = 1;
+  WorkspaceConfig config = 2;
+}
+
+message CreateWorkspaceResponse {
+  string workspace_id = 1;
+  string root_path = 2;
+  string metadata_db_path = 3;
+  string root_node_id = 4;
+}
+
+message DeleteWorkspaceRequest {
+  string workspace_id = 1;
+}
+
+message DeleteWorkspaceResponse {}
+
+message GetWorkspaceStatsRequest {
+  string workspace_id = 1;
+}
+
+message GetWorkspaceStatsResponse {
+  uint64 file_count = 1;
+  uint64 dir_count = 2;
+  uint64 chunk_count = 3;
+  uint64 event_count = 4;
+  uint64 total_content_bytes = 5;
+  uint64 queued_jobs = 6;
+  uint64 running_jobs = 7;
+  uint64 completed_jobs = 8;
+  uint64 failed_jobs = 9;
+  // Per-indexing-policy file counts (only set when the index supports the `indexing_policy` column).
+  uint64 indexing_policy_full_files = 10;
+  uint64 indexing_policy_headline_only_files = 11;
+  uint64 indexing_policy_skipped_files = 12;
+}
+
+message ReindexWorkspaceRequest {
+  string workspace_id = 1;
+}
+
+message ReindexWorkspaceResponse {
+  uint32 enqueued_jobs = 1;
+}
+
+message ListWorkspacesRequest {
+  // Maximum number of workspaces to return. 0 means server default.
+  uint32 limit = 1;
+  // Pagination cursor from previous response (exclusive).
+  string cursor = 2;
+}
+
+message WorkspaceSummary {
+  string workspace_id = 1;
+  string name = 2;
+  string root_node_id = 3;
+  int64 created_at_unix_nano = 4;
+}
+
+message ListWorkspacesResponse {
+  repeated WorkspaceSummary workspaces = 1;
+  string next_cursor = 2;
+}
+
+message LookupRequest {
+  string workspace_id = 1;
+  string parent_node_id = 2;
+  string name = 3;
+}
+
+message LookupResponse {
+  string node_id = 1;
+  Attrs attrs = 2;
+}
+
+message GetAttrsRequest {
+  string workspace_id = 1;
+  string node_id = 2;
+}
+
+message GetAttrsResponse {
+  Attrs attrs = 1;
+}
+
+message GetAttrsIfChangedRequest {
+  string workspace_id = 1;
+  string node_id = 2;
+  uint64 known_version = 3;
+}
+
+message GetAttrsIfChangedResponse {
+  bool changed = 1;
+  Attrs attrs = 2;
+}
+
+message ReadDirRequest {
+  string workspace_id = 1;
+  string node_id = 2;
+  string cursor = 3;
+  uint32 limit = 4;
+}
+
+message ReadDirResponse {
+  repeated DirEntry entries = 1;
+  string next_cursor = 2;
+}
+
+message ResolveRefRequest {
+  string workspace_id = 1;
+  string node_id = 2;
+}
+
+message ResolveRefResponse {
+  string path = 1;
+  bool exists = 2;
+  string redirect_to_node_id = 3;
+}
+
+message ResolvePathRequest {
+  string workspace_id = 1;
+  string path = 2;
+}
+
+message ResolvePathResponse {
+  string node_id = 1;
+  bool exists = 2;
+}
+
+message CreateRequest {
+  string workspace_id = 1;
+  string parent_node_id = 2;
+  string name = 3;
+  NodeKind kind = 4;
+  uint32 mode = 5;
+  bool exclusive = 6;
+}
+
+message CreateResponse {
+  string node_id = 1;
+  Attrs attrs = 2;
+}
+
+message UnlinkRequest {
+  string workspace_id = 1;
+  string parent_node_id = 2;
+  string name = 3;
+  // Optimistic concurrency: must match current node version (0 = skip check).
+  uint64 if_version = 4;
+}
+
+message UnlinkResponse {}
+
+message RenameRequest {
+  string workspace_id = 1;
+  string from_parent_node_id = 2;
+  string from_name = 3;
+  string to_parent_node_id = 4;
+  string to_name = 5;
+  bool overwrite = 6;
+  // Optimistic concurrency on the source node (0 = skip check).
+  uint64 if_version = 7;
+}
+
+message RenameResponse {
+  string node_id = 1;
+  uint64 version = 2;
+}
+
+message AttrsPatch {
+  bool has_mode = 1;
+  uint32 mode = 2;
+  bool has_mtime_unix_nano = 3;
+  int64 mtime_unix_nano = 4;
+}
+
+message SetAttrsRequest {
+  string workspace_id = 1;
+  string node_id = 2;
+  AttrsPatch patch = 3;
+}
+
+message SetAttrsResponse {
+  Attrs attrs = 1;
+}
+
+message PutFilePath {
+  string parent_node_id = 1;
+  string name = 2;
+}
+
+message PutFileRequest {
+  string workspace_id = 1;
+  // Deprecated: kept for backward compatibility with existing clients.
+  string path = 2 [deprecated = true];
+  oneof target {
+    string node_id = 3;
+    PutFilePath put_file_path = 4;
+  }
+  bytes content = 5;
+  uint64 if_version = 6;
+  uint32 mode = 7;
+}
+
+message PutFileResponse {
+  string node_id = 1;
+  uint64 version = 2;
+  uint64 size = 3;
+}
+
+message GetFileRequest {
+  string workspace_id = 1;
+  string path = 2;
+}
+
+message GetFileChunk {
+  bytes data = 1;
+  bool eof = 2;
+}
+
+enum HandleMode {
+  HANDLE_MODE_UNSPECIFIED = 0;
+  HANDLE_MODE_READ = 1;
+  HANDLE_MODE_WRITE = 2;
+  HANDLE_MODE_READ_WRITE = 3;
+}
+
+message OpenRequest {
+  string workspace_id = 1;
+  string node_id = 2;
+  HandleMode mode = 3;
+}
+
+message OpenResponse {
+  string handle_id = 1;
+  uint64 snapshot_version = 2;
+  Attrs attrs = 3;
+}
+
+message ReadRequest {
+  string workspace_id = 1;
+  string handle_id = 2;
+  uint64 offset = 3;
+  uint32 length = 4;
+}
+
+message ReadResponse {
+  bytes data = 1;
+  bool eof = 2;
+}
+
+message WriteRequest {
+  string workspace_id = 1;
+  string handle_id = 2;
+  uint64 offset = 3;
+  bytes data = 4;
+}
+
+message WriteResponse {
+  uint64 bytes_written = 1;
+}
+
+message TruncateRequest {
+  string workspace_id = 1;
+  string handle_id = 2;
+  uint64 size = 3;
+}
+
+message TruncateResponse {}
+
+message FlushRequest {
+  string workspace_id = 1;
+  string handle_id = 2;
+}
+
+message FlushResponse {
+  uint64 version = 1;
+  Attrs attrs = 2;
+}
+
+message ReleaseRequest {
+  string workspace_id = 1;
+  string handle_id = 2;
+}
+
+message ReleaseResponse {
+  uint64 version = 1;
+}
+
+enum SearchMode {
+  SEARCH_MODE_UNSPECIFIED = 0;
+  SEARCH_MODE_FTS = 1;
+  SEARCH_MODE_VECTOR = 2;
+  SEARCH_MODE_HYBRID = 3;
+}
+
+message SearchRequest {
+  string workspace_id = 1;
+  string query = 2;
+  SearchMode mode = 3;
+  uint32 limit = 4;
+}
+
+message SearchHit {
+  string node_id = 1;
+  string path = 2;
+  uint32 start_line = 3;
+  uint32 end_line = 4;
+  float score = 5;
+  string snippet = 6;
+  string context_path = 7;
+  // True when the hit row was indexed with degraded coverage (headline-only chunk).
+  bool degraded_indexing = 8;
+}
+
+message SearchResponse {
+  repeated SearchHit hits = 1;
+  uint32 total_hits = 2;
+}
+
+enum EventKind {
+  EVENT_KIND_UNSPECIFIED = 0;
+  EVENT_KIND_NODE_CREATED = 1;
+  EVENT_KIND_NODE_MODIFIED = 2;
+  EVENT_KIND_NODE_DELETED = 3;
+  EVENT_KIND_NODE_RENAMED = 4;
+  EVENT_KIND_ATTRS_CHANGED = 5;
+  EVENT_KIND_INDEX_UPDATED = 6;
+}
+
+message Event {
+  string cursor = 1;
+  int64 created_at_unix_nano = 2;
+  EventKind kind = 3;
+  string workspace_id = 4;
+  string node_id = 5;
+  string payload_json = 6;
+  string path = 7;
+}
+
+message SubscribeFilter {
+  repeated string path_prefix = 1;
+  repeated string node_ids = 2;
+  repeated EventKind kinds = 3;
+  bool include_index_events = 4;
+}
+
+message SubscribeRequest {
+  string workspace_id = 1;
+  string since_cursor = 2;
+  string subscriber_id = 3;
+  SubscribeFilter filter = 4;
+}
+
+message AcknowledgeRequest {
+  string workspace_id = 1;
+  string cursor = 2;
+  string subscriber_id = 3;
+}
+
+message AcknowledgeResponse {}

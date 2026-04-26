@@ -1,0 +1,16 @@
+[package]
+name = "scry-index"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+rusqlite.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+serde_json.workspace = true
+base64.workspace = true
+blake3.workspace = true
+mime_guess.workspace = true
+sqlite-vec = "0.1.9"

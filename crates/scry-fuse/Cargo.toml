@@ -1,0 +1,24 @@
+[package]
+name = "scry-fuse"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+fuse = ["dep:fuser", "dep:libc"]
+
+[dependencies]
+anyhow.workspace = true
+tokio.workspace = true
+tonic.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap = { version = "4", features = ["derive"] }
+scry-proto = { path = "../scry-proto" }
+fuser = { version = "0.16", optional = true }
+libc = { version = "0.2", optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true
